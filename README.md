@@ -4,10 +4,10 @@ This repository contains the OpenAPI specification for the Server Orchestrator A
 
 ## Repo Structure
 
+- `.github/workflows/ci-cd.yml`: GitHub Actions for validation and release.
 - `openapi/openapi.yaml`: The single source of truth for the API definition.
 - `pom.xml`: Root Maven configuration for orchestration and code generation.
-- `generated/`: Output directory for generated code (not committed).
-- `.github/workflows/ci-cd.yml`: GitHub Actions for validation and release.
+- `target/`: Output directory for generated code.
 
 ## Local Development
 
@@ -15,7 +15,6 @@ This repository contains the OpenAPI specification for the Server Orchestrator A
 
 - Java 17+
 - Maven 3.8+
-- Node.js & npm (for client SDKs)
 
 ### Generation Flow
 
@@ -38,6 +37,30 @@ mvn clean compile -P backend-spring
 ```
 
 The version used for local builds is always `VERSION`.
+
+### Generator Properties
+
+All generator behavior is driven by Maven properties in `pom.xml`. You can override any property at runtime using `-D`, for example:
+
+```bash
+mvn clean compile -P backend-spring -Dgenerator.backend.interfaceOnly=true
+```
+
+#### Key properties
+
+| Property                                 | Description                                             |
+|------------------------------------------|---------------------------------------------------------|
+| revision                                 | Version used for local builds and npm package versions. |
+| generator.version                        | OpenAPI Generator version.                              |
+| generator.inputSpec                      | Path to the OpenAPI spec file.                          |
+| generator.baseOutputDir                  | Base output directory for generated code.               |
+| generator.backend.interfaceOnly          | Generate interfaces only for backend targets.           |
+| generator.backend.delegatePattern        | Use delegate pattern for backend targets.               |
+| generator.backend.basePackage            | Base Java package for backend targets.                  |
+| generator.frontend.basePackage           | Base npm package name for frontend targets.             |
+| generator.frontend.supportsES6           | Enable ES6 support for frontend targets.                |
+| generator.frontend.withInterfaces        | Generate TypeScript interfaces.                         |
+| generator.frontend.generateDocumentation | Toggle API/model documentation generation.              |
 
 ## Validation
 

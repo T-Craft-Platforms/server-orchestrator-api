@@ -41,11 +41,11 @@
 
         <generator.version>7.19.0</generator.version>
         <generator.inputSpec>${project.basedir}/openapi/openapi.yaml</generator.inputSpec>
-        <generator.baseOutputDir>${project.basedir}/generated</generator.baseOutputDir>
+        <generator.baseOutputDir>${project.basedir}/target</generator.baseOutputDir>
 
         <generator.backend.interfaceOnly>false</generator.backend.interfaceOnly>
         <generator.backend.delegatePattern>true</generator.backend.delegatePattern>
-        <generator.backend.basePackage>ch.tcraft.server-orchestrator.api</generator.backend.basePackage>
+        <generator.backend.basePackage>ch.tcraft.server.orchestrator.api</generator.backend.basePackage>
 
         <generator.frontend.basePackage>@tcraft/server-orchestrator-api</generator.frontend.basePackage>
         <generator.frontend.supportsES6>true</generator.frontend.supportsES6>
