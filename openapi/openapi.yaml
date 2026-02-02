@@ -1,0 +1,24 @@
+openapi: 3.0.3
+info:
+  title: Server Orchestrator API
+  description: API for managing server orchestration.
+  version: VERSION
+paths:
+  /info:
+    get:
+      summary: Get API information
+      operationId: getInfo
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  version:
+                    type: string
+                  status:
+                    type: string

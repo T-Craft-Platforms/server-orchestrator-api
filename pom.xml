@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ch.tcraft</groupId>
+    <artifactId>server-orchestrator-api</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>Server Orchestrator API</name>
+    <description>OpenAPI specification and generated client/server code for T-Craft Server Orchestrator</description>
+    <url>https://github.com/T-Craft-Platforms/server-orchestrator-api</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://opensource.org/license/apache-2-0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:git://github.com/T-Craft-Platforms/server-orchestrator-api.git</connection>
+        <developerConnection>scm:git:ssh://github.com:T-Craft-Platforms/server-orchestrator-api.git</developerConnection>
+        <url>https://github.com/T-Craft-Platforms/server-orchestrator-api</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/T-Craft-Platforms/server-orchestrator-api/issues</url>
+    </issueManagement>
+
+    <properties>
+        <revision>VERSION</revision>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
+
+        <generator.version>7.19.0</generator.version>
+        <generator.inputSpec>${project.basedir}/openapi/openapi.yaml</generator.inputSpec>
+        <generator.baseOutputDir>${project.basedir}/generated</generator.baseOutputDir>
+
+        <generator.backend.interfaceOnly>false</generator.backend.interfaceOnly>
+        <generator.backend.delegatePattern>true</generator.backend.delegatePattern>
+        <generator.backend.basePackage>ch.tcraft.server-orchestrator.api</generator.backend.basePackage>
+
+        <generator.frontend.basePackage>@tcraft/server-orchestrator-api</generator.frontend.basePackage>
+        <generator.frontend.supportsES6>true</generator.frontend.supportsES6>
+        <generator.frontend.withInterfaces>true</generator.frontend.withInterfaces>
+        <generator.frontend.generateDocumentation>false</generator.frontend.generateDocumentation>
+    </properties>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.openapitools</groupId>
+                    <artifactId>openapi-generator-maven-plugin</artifactId>
+                    <version>${generator.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <configuration>
+                    <inputSpec>${generator.inputSpec}</inputSpec>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>backend-spring</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <configuration>
+                            <apiPackage>${generator.backend.basePackage}.web</apiPackage>
+                            <modelPackage>${generator.backend.basePackage}.model</modelPackage>
+                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+                            <configOptions>
+                                <interfaceOnly>${generator.backend.interfaceOnly}</interfaceOnly>
+                                <delegatePattern>${generator.backend.delegatePattern}</delegatePattern>
+                            </configOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>generate-spring-boot</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <generatorName>spring</generatorName>
+                                    <output>${generator.baseOutputDir}/spring-boot-server</output>
+                                    <configOptions>
+                                        <useSpringBoot3>true</useSpringBoot3>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>backend-jaxrs</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <configuration>
+                            <apiPackage>${generator.backend.basePackage}.web</apiPackage>
+                            <modelPackage>${generator.backend.basePackage}.model</modelPackage>
+                            <supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
+                            <configOptions>
+                                <interfaceOnly>${generator.backend.interfaceOnly}</interfaceOnly>
+                                <delegatePattern>${generator.backend.delegatePattern}</delegatePattern>
+                            </configOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>generate-jaxrs</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <generatorName>jaxrs-spec</generatorName>
+                                    <output>${generator.baseOutputDir}/jaxrs-server</output>
+                                    <configOptions>
+                                        <useJakartaEe>true</useJakartaEe>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>frontend-fetch</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <configuration>
+                            <generateModelDocumentation>${generator.frontend.generateDocumentation}</generateModelDocumentation>
+                            <generateApiDocumentation>${generator.frontend.generateDocumentation}</generateApiDocumentation>
+                            <configOptions>
+                                <npmVersion>${revision}</npmVersion>
+                                <supportsES6>${generator.frontend.supportsES6}</supportsES6>
+                                <withInterfaces>${generator.frontend.withInterfaces}</withInterfaces>
+                            </configOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>generate-ts-fetch</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <generatorName>typescript-fetch</generatorName>
+                                    <output>${generator.baseOutputDir}/typescript-fetch-client</output>
+                                    <configOptions>
+                                        <npmName>${generator.frontend.basePackage}-fetch</npmName>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>frontend-axios</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
+                        <configuration>
+                            <generateModelDocumentation>${generator.frontend.generateDocumentation}</generateModelDocumentation>
+                            <generateApiDocumentation>${generator.frontend.generateDocumentation}</generateApiDocumentation>
+                            <configOptions>
+                                <npmVersion>${revision}</npmVersion>
+                                <supportsES6>${generator.frontend.supportsES6}</supportsES6>
+                                <withInterfaces>${generator.frontend.withInterfaces}</withInterfaces>
+                            </configOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>generate-ts-axios</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>generate</goal>
+                                </goals>
+                                <configuration>
+                                    <generatorName>typescript-axios</generatorName>
+                                    <output>${generator.baseOutputDir}/typescript-axios-client</output>
+                                    <configOptions>
+                                        <npmName>${generator.frontend.basePackage}-axios</npmName>
+                                    </configOptions>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
