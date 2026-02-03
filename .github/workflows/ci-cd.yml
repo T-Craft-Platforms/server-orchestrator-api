@@ -1,130 +1,94 @@
-name: CI/CD
+name: CI / CD
 
 on:
   push:
-    branches:
-      - "**"
+    branches: ["**"]
     tags:
-      - "*"
+      - "v*"
   pull_request:
-  release:
-    types:
-      - published
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-env:
-  JAVA_VERSION: "17"
-  OPENAPI_GENERATOR_VERSION: "7.19.0"
 
 jobs:
-  validate-openapi:
-    name: Validate OpenAPI
+  openapi-validate:
+    name: Validate OpenAPI specs
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - name: Setup Node (for openapi-cli)
+        uses: actions/setup-node@v4
         with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
+          node-version: 20
 
-      - name: Validate OpenAPI specs
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          specs=(openapi/*.yaml openapi/*.yml)
-          if [ ${#specs[@]} -eq 0 ]; then
-            echo "No OpenAPI specs found in openapi/"
-            exit 1
-          fi
-          for spec in "${specs[@]}"; do
-            echo "Validating $spec"
-            mvn -q -DskipTests \
-              org.openapitools:openapi-generator-maven-plugin:${OPENAPI_GENERATOR_VERSION}:validate \
-              -DinputSpec="$spec"
-          done
+      - name: Install OpenAPI CLI
+        run: npm install -g @redocly/cli
 
-  generate-main:
-    name: Generate APIs (main)
+      - name: Validate OpenAPI files
+        run: redocly lint "openapi/openapi.yaml"
+
+  release:
+    name: Generate & Publish (Spring Boot + Axios)
     runs-on: ubuntu-latest
-    needs: validate-openapi
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    needs: openapi-validate
+    if: startsWith(github.ref, 'refs/tags/v')
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-
-      - name: Generate Spring Boot + Axios
-        run: mvn -q -DskipTests clean compile -P backend-spring,frontend-axios
-
-  publish-release:
-    name: Publish Packages
-    runs-on: ubuntu-latest
-    needs: validate-openapi
-    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'release'
     permissions:
       contents: read
       packages: write
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Resolve tag version
+      - name: Extract version from tag
         id: version
-        shell: bash
         run: |
-          if [ "${GITHUB_EVENT_NAME}" = "release" ]; then
-            TAG_NAME="${{ github.event.release.tag_name }}"
-          else
-            TAG_NAME="${GITHUB_REF_NAME}"
-          fi
-          VERSION="${TAG_NAME#v}"
-          echo "tag=${TAG_NAME}" >> "$GITHUB_OUTPUT"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: 17
+          cache: maven
           server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
+          settings-path: ${{ github.workspace }}
 
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: 20
           registry-url: https://npm.pkg.github.com
 
-      - name: Generate Spring Boot + Axios (release)
-        run: mvn -q -DskipTests clean compile -P backend-spring,frontend-axios -Drevision=${{ steps.version.outputs.version }}
-
-      - name: Publish Spring Boot (Maven)
-        run: mvn -q -DskipTests -f target/spring-boot-server/pom.xml deploy \
-          -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/${{ github.repository }}
-
-      - name: Configure npm auth
-        shell: bash
+      - name: Generate Spring Boot backend
         run: |
-          echo "@tcraft:registry=https://npm.pkg.github.com" > ~/.npmrc
-          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" >> ~/.npmrc
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          mvn -B \
+            -Drevision=${{ steps.version.outputs.version }} \
+            -Pbackend-spring \
+            generate-sources
 
-      - name: Publish Axios (npm)
-        run: npm publish
+      - name: Generate TypeScript Axios client
+        run: |
+          mvn -B \
+            -Drevision=${{ steps.version.outputs.version }} \
+            -Pfrontend-axios \
+            generate-sources
+
+      - name: Publish Maven artifacts
+        run: |
+          mvn -B \
+            -Drevision=${{ steps.version.outputs.version }} \
+            -DskipTests \
+            deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish npm package (Axios)
         working-directory: target/typescript-axios-client
+        run: |
+          npm install
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
